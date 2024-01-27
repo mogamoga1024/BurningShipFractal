@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burning Ship Fractal</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="burningShipCanvas" width="800" height="600"></canvas>
+
+    <script>
+        // Canvas要素と2Dコンテキストの取得
+        const canvas = document.getElementById('burningShipCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // バーニングシップフラクタルのパラメータ
+        let centerX = -0.5;
+        let centerY = 0;
+        let zoom = 1;
+
+        // バーニングシップフラクタルの描画
+        function drawBurningShipFractal() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            const MAX_ITERATIONS = 100;
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    // バーニングシップフラクタルの計算
+                    let real = (x - width / 2) * 4 / (width * zoom) + centerX;
+                    let imag = (y - height / 2) * 4 / (height * zoom) + centerY;
+                    let cre = Math.abs(real);
+                    let cim = Math.abs(imag);
+                    let count = 0;
+
+                    while (count < MAX_ITERATIONS) {
+                        const re2 = cre * cre;
+                        const im2 = cim * cim;
+
+                        if (re2 + im2 > 16) {
+                            break;
+                        }
+
+                        cim = Math.abs(2 * cre * cim + imag);
+                        cre = Math.abs(re2 - im2 + real);
+
+                        count++;
+                    }
+
+                    // ピクセルの色を設定
+                    const hue = count === MAX_ITERATIONS ? 0 : (count / MAX_ITERATIONS) * 360;
+                    const saturation = 100;
+                    const lightness = count === MAX_ITERATIONS ? 0 : 50;
+                    const rgb = hslToRgb(hue, saturation, lightness);
+
+                    const pixelIndex = (y * width + x) * 4;
+                    data[pixelIndex] = rgb[0];
+                    data[pixelIndex + 1] = rgb[1];
+                    data[pixelIndex + 2] = rgb[2];
+                    data[pixelIndex + 3] = 255;  // アルファチャンネル
+                }
+            }
+
+            // Canvasに描画
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        // マウスの位置に基づいてバーニングシップフラクタルをズーム
+        canvas.addEventListener('mousedown', function (e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // マウスの位置に基づいて座標変換
+            centerX += (mouseX - canvas.width / 2) * 4 / (canvas.width * zoom);
+            centerY += (mouseY - canvas.height / 2) * 4 / (canvas.height * zoom);
+
+            // バーニングシップフラクタルをズームして再描画
+            zoom *= 2;
+            drawBurningShipFractal();
+        });
+
+        // 初期描画
+        drawBurningShipFractal();
+
+        // HSL to RGB変換関数
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+        
+            let r, g, b;
+        
+            if (s === 0) {
+                r = g = b = l; // achromatic
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+        
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1 / 3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1 / 3);
+            }
+        
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+    </script>
+</body>
+</html>
