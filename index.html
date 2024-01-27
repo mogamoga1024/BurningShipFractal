@@ -22,6 +22,7 @@
         // バーニングシップフラクタルのパラメータ
         let centerX = -0.5;
         let centerY = 0;
+        const history = [{centerX, centerY}];
         let zoom = 1;
 
         // バーニングシップフラクタルの描画
@@ -74,20 +75,31 @@
             ctx.putImageData(imageData, 0, 0);
         }
 
-        // マウスの位置に基づいてバーニングシップフラクタルをズーム
         canvas.addEventListener('mousedown', function (e) {
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // マウスの位置に基づいて座標変換
-            centerX += (mouseX - canvas.width / 2) * 4 / (canvas.width * zoom);
-            centerY += (mouseY - canvas.height / 2) * 4 / (canvas.height * zoom);
-
-            // バーニングシップフラクタルをズームして再描画
-            zoom *= 2;
+            // 左クリック
+            if (e.button === 0) {
+                history.push({centerX, centerY});
+                centerX += (mouseX - canvas.width / 2) * 4 / (canvas.width * zoom);
+                centerY += (mouseY - canvas.height / 2) * 4 / (canvas.height * zoom);
+                zoom *= 2;
+            }
+            // 右クリック
+            else if (e.button === 2 && history.length > 1) {
+                const prev = history.pop();
+                centerX = prev.centerX;
+                centerY = prev.centerY;
+                zoom /= 2;
+            }
             drawBurningShipFractal();
         });
+
+        canvas.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        })
 
         // 初期描画
         drawBurningShipFractal();
